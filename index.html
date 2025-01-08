@@ -505,6 +505,35 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             <figcaption class="white">CW</figcaption>
         </figure>
     </section>
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">Docker RabbitMQ bez użytkownika</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 20px;overflow: hidden;  " class="language-yaml">
+                    <code style="line-height: 20px !important;">
+                        services:
+                        rabbitmq:
+                          image: rabbitmq:4-management
+                          container_name: rabbitmq
+                          ports:
+                            - "5672:5672"   # Port protokołu AMQP
+                            - "15672:15672" # Port interfejsu zarządzania
+                          volumes:
+                            - rabbitmq_data:/var/lib/rabbitmq    # Trwałość danych
+                            - rabbitmq_logs:/var/log/rabbitmq   # Przechowywanie logów
+                      
+                      volumes:
+                        rabbitmq_data:
+                          driver: local
+                        rabbitmq_logs:
+                          driver: local
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section>
     <!--DEMO PROSTE WYSŁANIE WIADOMOŚCI-->
     <section class="slide prism over bhgry">
         <div class="grid-container">
