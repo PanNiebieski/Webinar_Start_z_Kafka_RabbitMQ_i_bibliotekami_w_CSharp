@@ -2966,11 +2966,15 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
-                <h2 class="headerCODE GG">KafkaFlow klient</h2>
+                <h2 class="headerCODE GG">KafkaFlow klient inny</h2>
             </div>
             <div class="PlaceCodeHere canscroll">
                 <pre style="font-size: 21px;overflow: hidden;  " class="language-csharp">
                     <code style="line-height: 21px !important;">
+
+
+
+
 
 
 
@@ -2998,9 +3002,11 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                         using Microsoft.Extensions.Logging;
                         
                         const string topicName = &quot;1KafkaFlow&quot;;
-                        int unique = 5;
+                        int unique = 6;
                         string groupId = &quot;1KafkaFlow_Group_&quot; + unique.ToString();
                         var services = new ServiceCollection();
+                        
+                        services.AddLogging(configure =&gt; configure.AddConsole());
                         
                         services.AddKafkaFlowHostedService(
                             kafka =&gt; kafka
@@ -3008,7 +3014,7 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                                 .AddCluster(cluster =&gt;
                                 {
                                     cluster
-                                        .WithBrokers(new[] { &quot;localhost:9092&quot; })
+                                        .WithBrokers(new[] { &quot;localhost:19092&quot; })
                                         .AddConsumer(consumer =&gt;
                                             consumer
                                                 .Topic(topicName)
@@ -3017,24 +3023,24 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                                                 .WithWorkersCount(3)
                                                 .WithAutoOffsetReset(KafkaFlow.AutoOffsetReset.Earliest)
                                                 .AddMiddlewares(middlewares =&gt; middlewares
+                                                    .Add&lt;CatchErrorsMiddleware&gt;()
                                                     .AddDeserializer&lt;JsonCoreDeserializer&gt;()
-                                                    .AddTypedHandlers(handlers =&gt;
-                                                        handlers.AddHandler&lt;AddTaskHandler&gt;()
-                                                    )
+                                                    .AddBatching(5, TimeSpan.FromSeconds(5))
+                                                    .Add&lt;StatisticsMiddleware&gt;()
+                                                    .Add&lt;ReadMiddleware&gt;()
                                                 )
                                         );
                                 })
                         );
                         
-                        services.AddLogging(configure =&gt; configure.AddConsole());
-                        
                         var provider = services.BuildServiceProvider();
-                        var bus = provider.CreateKafkaBus();
                         
+                        var bus = provider.CreateKafkaBus();
                         await bus.StartAsync();
                         
                         Console.WriteLine(&quot;Press key to exit&quot;);
                         Console.ReadKey();
+                        
                     </code>
                 </pre>
             </div>
@@ -3122,6 +3128,141 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
     <section class="slide" style="background-color:white">
         <figure>
             <img class="cover" src="pictures/KafkaUI/09.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
+    <section class="slide" style="background-color:white">
+        <figure>
+            <img class="cover" src="pictures/2/21.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">DashBoard</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 21px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 21px !important;">
+                    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        var builder = WebApplication.CreateBuilder(args);
+
+                        builder.Services.Configure&lt;KafkaConfig&gt;(builder.Configuration.GetSection(&quot;KafkaConfig&quot;));
+                        builder.Logging.AddConsole();
+                        builder.Logging.SetMinimumLevel(LogLevel.Debug);
+                        builder.Services.AddLogging(configure =&gt; configure.AddConsole());
+                        
+                        var server = builder.Configuration[&quot;KafkaConfig:BootstrapServers&quot;];
+                        var topic = builder.Configuration[&quot;KafkaConfig:Topic&quot;];
+                        var groupid = builder.Configuration[&quot;KafkaConfig:GroupId&quot;];
+                        
+                        builder.Services
+                            .AddKafka(kafka =&gt; kafka
+                                .AddCluster(cluster =&gt; cluster
+                                        .WithBrokers(new[] { server })
+                                        .AddConsumer(consumer =&gt; consumer
+                                            .Topic(topic)
+                                            .WithGroupId(groupid)
+                                            .WithWorkersCount(1)
+                                            .WithBufferSize(10)
+                                        )
+                                        .EnableTelemetry(&quot;kafka-flow.admin&quot;) 
+                                        // you can use the same topic used in EnableAdminMessages, if need it
+                                        .EnableAdminMessages(
+                                        &quot;kafka-flow.admin&quot; // the admin topic
+                                    )
+                                ))
+                            .AddControllers();
+                        
+                        builder.Services
+                            .AddSwaggerGen(
+                                c =&gt;
+                                {
+                                    c.SwaggerDoc(
+                                        &quot;kafka-flow&quot;,
+                                        new OpenApiInfo
+                                        {
+                                            Title = &quot;KafkaFlow Admin&quot;,
+                                            Version = &quot;kafka-flow&quot;,
+                                        });
+                                });
+                        
+                        var app = builder.Build();
+                        
+                        app.MapControllers();
+                        app.UseKafkaFlowDashboard();
+                        
+                        app.UseSwagger();
+                        app.UseSwaggerUI(c =&gt;
+                        {
+                            c.SwaggerEndpoint(&quot;/swagger/kafka-flow/swagger.json&quot;, &quot;KafkaFlow Admin&quot;);
+                        });
+                        
+                        var kafkaBus = app.Services.CreateKafkaBus();
+                        await kafkaBus.StartAsync();
+
+                        await app.RunAsync();
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section>  
+    <section class="slide" style="background-color:white">
+        <figure>
+            <img class="cover" src="pictures/swagger.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
+    <section class="slide" style="background-color:white">
+        <figure>
+            <img class="cover" src="pictures/2/22.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
+    <section class="slide" style="background-color:white">
+        <figure>
+            <img class="cover" src="pictures/dashborad.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
+    <section class="slide" style="background-color:white">
+        <figure>
+            <img class="cover" src="pictures/2/23.png" alt="blog">
             <figcaption class="white">CW</figcaption>
         </figure>
     </section>
