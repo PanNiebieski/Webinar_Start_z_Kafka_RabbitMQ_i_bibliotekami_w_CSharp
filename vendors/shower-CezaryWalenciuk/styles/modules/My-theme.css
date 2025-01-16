@@ -39,7 +39,14 @@
 }
 
 .boldf {
-    font-weight: bold;
+  
+}
+
+.boldf span {
+    background-color: white !important;
+    color: var(--border-color-css) !important;
+    border-bottom: 5px solid var(--border-color-css) !important;
+ 
 }
 
 body {
