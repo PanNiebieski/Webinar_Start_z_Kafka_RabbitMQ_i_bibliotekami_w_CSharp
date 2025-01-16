@@ -511,6 +511,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             <figcaption class="white">CW</figcaption>
         </figure>
     </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>Docker RabbitMQ bez użytkownika
+        </span></span>
+    </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
@@ -540,11 +544,15 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             </div>
         </div>
     </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>RabbitMQ.Client 6.8.3 Sender
+        </span></span>
+    </section>
     <!--DEMO PROSTE WYSŁANIE WIADOMOŚCI-->
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
-                <h2 class="headerCODE GG">RabbitMQ.Client Sender</h2>
+                <h2 class="headerCODE GG">RabbitMQ.Client 6.8.3 Sender</h2>
             </div>
             <div class="PlaceCodeHere canscroll">
                 <pre style="font-size: 24px;overflow: hidden;  " class="language-csharp">
@@ -613,6 +621,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                 </pre>
             </div>
         </div>
+    </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>RabbitMQ.Client 6.8.3 Reciver
+        </span></span>
     </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
@@ -691,10 +703,168 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             </div>
         </div>
     </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>RabbitMQ.Client 7.0.0 Sender
+        </span></span>
+    </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
-                <h2 class="headerCODE GG">EasyNetQ Reciver</h2>
+                <h2 class="headerCODE GG">RabbitMQ.Client 6.8.3 Sender</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 24px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 24px !important;">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+     
+                        
+
+                        using RabbitMQ.Client;
+                        using System.Text;
+                                                
+                        var factory = new ConnectionFactory() { HostName = &quot;localhost&quot; };
+                        using (var connection = await factory.CreateConnectionAsync())
+                        using (var channel = await connection.CreateChannelAsync())
+                        {
+                            await channel.QueueDeclareAsync(queue: &quot;R7.01&quot;,
+                                durable: false,
+                                exclusive: false,
+                                autoDelete: false,
+                                arguments: null);
+                        
+                            while (true)
+                            {
+                                Console.WriteLine(&quot;Write what you want to send&quot;);
+                                Console.WriteLine(&quot;Write nothing to exit.&quot;);
+                        
+                                string? usermessage = Console.ReadLine();
+                        
+                                if (string.IsNullOrWhiteSpace(usermessage))
+                                    break;
+                        
+                                string message = usermessage;
+                                var body = Encoding.UTF8.GetBytes(message);
+                        
+                                await channel.BasicPublishAsync(exchange: &quot;&quot;,
+                                    routingKey: &quot;R7.01&quot;, body);
+                        
+                        
+                                Console.WriteLine(&quot;&quot;);
+                                Console.ForegroundColor = ConsoleColor.Green;
+                                Console.WriteLine(&quot;\tSent {0}&quot;, message);
+                                Console.ForegroundColor = ConsoleColor.Gray;
+                                Console.WriteLine(&quot;&quot;);
+                            }
+                        }
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>RabbitMQ.Client 7.0.0 Reciver
+        </span></span>
+    </section>
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">RabbitMQ.Client Reciver</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 24px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 24px !important;">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        using RabbitMQ.Client.Events;
+                        using RabbitMQ.Client;
+                        using System.Text;
+                        
+                        var factory = new ConnectionFactory() { HostName = &quot;localhost&quot; };
+
+                        using (var connection = await factory.CreateConnectionAsync())
+                        using (var channel = await connection.CreateChannelAsync())
+                        {
+                            await channel.QueueDeclareAsync(queue: &quot;R7.01&quot;, durable: false,
+                                exclusive: false, autoDelete: false, arguments: null);
+                        
+                            Console.WriteLine(&quot; Waiting for messages.&quot;);
+                        
+                            var consumer = new AsyncEventingBasicConsumer(channel);
+                        
+                            consumer.ReceivedAsync += async (model, ea) =&gt;
+                            {
+                                await Task.Run(() =&gt;
+                                {
+                                    var message = Encoding.UTF8.GetString(ea.Body.ToArray());
+                                    Console.Write(&quot;-&gt; Received: &quot;);
+                                    Console.ForegroundColor = ConsoleColor.Green;
+                                    Console.WriteLine(message);
+                                    Console.ForegroundColor = ConsoleColor.Gray;
+                                });
+                                //channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+                            };
+                        
+                            await channel.BasicConsumeAsync(queue: &quot;R7.01&quot;,
+                            autoAck: true, consumer: consumer);
+                        
+                        
+                            char key = &#39;z&#39;;
+                        
+                            while (key != &#39;q&#39; &amp;&amp; key != &#39;Q&#39;)
+                            {
+                                Console.WriteLine(&quot; Press [q] or [Q] to exit.&quot;);
+                                key = Console.ReadKey().KeyChar;
+                            }
+                        }
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>EasyNetQ Sender
+        </span></span>
+    </section>
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">EasyNetQ Sender</h2>
             </div>
             <div class="PlaceCodeHere ">
                 <pre style="font-size: 30px;overflow: hidden;  " class="language-csharp">
@@ -722,6 +892,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                 </pre>
             </div>
         </div>
+    </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>EasyNetQ Reciver
+        </span></span>
     </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
@@ -761,6 +935,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
         </figure>
     </section>
     <!--DEMO CO JEŚLI WIADOMOŚĆ SIĘ NIE PRZETWORZY-->
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>RabbitMQ.Client 6.8.3 Sender Example of ACK
+        </span></span>
+    </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
@@ -879,6 +1057,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             </div>
         </div>
     </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>RabbitMQ.Client Reciver Example of ACK 
+        </span></span>
+    </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
@@ -982,6 +1164,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                 </pre>
             </div>
         </div>
+    </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>RabbitMQ.Client Reciver Example of ACK Błędny
+        </span></span>
     </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
@@ -1176,6 +1362,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             <figcaption class="white">CW</figcaption>
         </figure>
     </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>EasyNetQ Sender Example
+        </span></span>
+    </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
@@ -1292,7 +1482,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             </div>
         </div>
     </section>
-
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>EasyNetQ Reciver Example
+        </span></span>
+    </section>
 
     <section class="slide prism over bhgry">
         <div class="grid-container">
@@ -1370,6 +1563,11 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             </div>
         </div>
     </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>EasyNetQ Reciver Example Dead Letter
+        </span></span>
+    </section>
+
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
@@ -1479,7 +1677,7 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
         </figure>
     </section>
     
-    <section class="slide" style="background-color:black">
+    <section class="slide" style="background-color:#22272E">
         <figure>
             <img class="cover" src="pictures/36.png" alt="blog">
             <figcaption class="white">CW</figcaption>
@@ -1523,6 +1721,12 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
     </section>
     <section class="slide" style="background-color:black">
         <figure>
+            <img class="cover" src="pictures/3/01.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
+    <section class="slide" style="background-color:black">
+        <figure>
             <img class="cover" src="pictures/43.png" alt="blog">
             <figcaption class="white">CW</figcaption>
         </figure>
@@ -1532,6 +1736,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             <img class="cover" src="pictures/44.png" alt="blog">
             <figcaption class="white">CW</figcaption>
         </figure>
+    </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>RabbitMQ.Client Sender Fanout
+        </span></span>
     </section>
     <!-- WYSŁANIE WIADOMOŚCI DO WIELU RABBITMQ-->
     <section class="slide prism over bhgry">
@@ -1571,6 +1779,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                 </pre>
             </div>
         </div>
+    </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>RabbitMQ.Client Reciver Fanout
+        </span></span>
     </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
@@ -1613,6 +1825,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             </div>
         </div>
     </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>EasyNetQ Sender Fanout
+        </span></span>
+    </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
@@ -1650,6 +1866,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                 </pre>
             </div>
         </div>
+    </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>EasyNetQ Reciver Fanout
+        </span></span>
     </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
@@ -1700,6 +1920,16 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             </div>
         </div>
     </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>Pokaż mi prawdziwy przykład ASP.NET Core
+        </span></span>
+    </section>
+    <section class="slide" style="background-color:#252526">
+        <figure>
+            <img class="cover" src="pictures/vs/vs01.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
+    </section>
     <section class="slide" style="background-color:black">
         <figure>
             <img class="cover" src="pictures/45.png" alt="blog">
@@ -1707,6 +1937,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
         </figure>
     </section>
     <!-- FRAMEWORK OPARTY NA ZDARZENIACH REBUS RABBITMQ -->
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>Rebus events RabbitMQ
+        </span></span>
+    </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
@@ -1808,7 +2042,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             </div>
         </div>
     </section>    
-
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>Rebus sender RabbitMQ
+        </span></span>
+    </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
@@ -1985,6 +2222,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                 </pre>
             </div>
         </div>
+    </section>
+    <section class="slide creamGG">
+        <span class="shout colors boldf" ><span>Rebus reciver RabbitMQ
+        </span></span>
     </section>    
     <section class="slide prism over bhgry">
         <div class="grid-container">
@@ -2550,6 +2791,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             </div>
         </div>
     </section>
+    <section class="slide creamPP">
+        <span class="shout colors boldf" ><span>Jak to działa?
+        </span></span>
+    </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
@@ -2589,7 +2834,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             <figcaption class="white">CW</figcaption>
         </figure>
     </section>
-
+    <section class="slide creamPP">
+        <span class="shout colors boldf" ><span>Confluent.Kafka Producent
+        </span></span>
+    </section>
     <!-- KAFKA CONFULENCE  --> 
     <section class="slide prism over bhgry">
         <div class="grid-container">
@@ -2768,7 +3016,11 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                 </pre>
             </div>
         </div>
-    </section> 
+    </section>
+    <section class="slide creamPP">
+        <span class="shout colors boldf" ><span>Confluent.Kafka Consumer
+        </span></span>
+    </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
@@ -2881,7 +3133,10 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             <figcaption class="white">CW</figcaption>
         </figure>
     </section>
-
+    <section class="slide creamPP">
+        <span class="shout colors boldf" ><span>KafkaFlow Producent
+        </span></span>
+    </section>
     <!-- KAFKA FLOW  -->    
     <section class="slide prism over bhgry">
         <div class="grid-container">
@@ -2969,10 +3224,138 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
             </div>
         </div>
     </section>
+    <section class="slide creamPP">
+        <span class="shout colors boldf" ><span>KafkaFlow Consumer - AddTypedHandlers version
+        </span></span>
+    </section>
     <section class="slide prism over bhgry">
         <div class="grid-container">
             <div class="HeaderTitle GG"> 
-                <h2 class="headerCODE GG">KafkaFlow klient inny</h2>
+                <h2 class="headerCODE GG">KafkaFlow Consumer AddTypedHandlers version</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 21px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 21px !important;">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        using KafkaFlow;
+                        using KafkaFlow.Serializer;
+                        using Microsoft.Extensions.DependencyInjection;
+                        using Microsoft.Extensions.Logging;
+                        
+                        const string topicName = &quot;1KafkaFlow&quot;;
+                        int unique = 5;
+                        string groupId = &quot;1KafkaFlow_Group_&quot; + unique.ToString();
+                        var services = new ServiceCollection();
+                        
+                        services.AddKafkaFlowHostedService(
+                            kafka =&gt; kafka
+                                .UseMicrosoftLog()
+                                .AddCluster(cluster =&gt;
+                                {
+                                    cluster
+                                        .WithBrokers(new[] { &quot;localhost:19092&quot; })
+                                        .AddConsumer(consumer =&gt;
+                                            consumer
+                                                .Topic(topicName)
+                                                .WithGroupId(groupId)
+                                                .WithBufferSize(100)
+                                                .WithWorkersCount(3)
+                                                .WithAutoOffsetReset(KafkaFlow.AutoOffsetReset.Earliest)
+                                                .AddMiddlewares(middlewares =&gt; middlewares
+                                                    .AddDeserializer&lt;JsonCoreDeserializer&gt;()
+                                                    .AddTypedHandlers(handlers =&gt;
+                                                        handlers.AddHandler&lt;AddTaskHandler&gt;()
+                                                    )
+                                                )
+                                        );
+                                })
+                        );
+                        
+                        services.AddLogging(configure =&gt; configure.AddConsole());
+                        
+                        var provider = services.BuildServiceProvider();
+                        var bus = provider.CreateKafkaBus();
+                        
+                        await bus.StartAsync();
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section>
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">KafkaFlow Consumer AddTypedHandlers version</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 21px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 21px !important;">
+
+
+
+
+
+
+
+                        using KafkaFlow;
+                        using Microsoft.Extensions.Logging;
+                        
+                        public class AddTaskHandler : IMessageHandler&lt;AddTaskRequest&gt;
+                        {
+                            private readonly ILogger&lt;AddTaskHandler&gt; _logger;
+                        
+                            public AddTaskHandler(ILogger&lt;AddTaskHandler&gt; logger)
+                            {
+                                _logger = logger;
+                            }
+                        
+                            public Task Handle(IMessageContext context, AddTaskRequest message)
+                            {
+                                if (message.DueDate.HasValue)
+                                    _logger.LogInformation(&quot;New Task {Title} scheduled to {DueDate}&quot;,
+                                        message.Title,
+                                        message.DueDate);
+                        
+                                return Task.CompletedTask;
+                            }
+                        }
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section>
+    <section class="slide creamPP">
+        <span class="shout colors boldf" ><span>KafkaFlow Consumer - Middleware version
+        </span></span>
+    </section>
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">KafkaFlow Consumer Middleware version</h2>
             </div>
             <div class="PlaceCodeHere canscroll">
                 <pre style="font-size: 21px;overflow: hidden;  " class="language-csharp">
@@ -3051,6 +3434,92 @@ Nawet jeśli jeszcze nic o tym nie wiesz, zapewniam, że wrócisz do domu z pods
                 </pre>
             </div>
         </div>
+    </section>
+    <section class="slide prism over bhgry">
+        <div class="grid-container">
+            <div class="HeaderTitle GG"> 
+                <h2 class="headerCODE GG">KafkaFlow Consumer Middleware version</h2>
+            </div>
+            <div class="PlaceCodeHere canscroll">
+                <pre style="font-size: 21px;overflow: hidden;  " class="language-csharp">
+                    <code style="line-height: 21px !important;">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                        public class CatchErrorsMiddleware : IMessageMiddleware
+                        {
+                            public async Task Invoke(IMessageContext context, MiddlewareDelegate next)
+                            {
+                                try
+                                {
+                                    await next(context);
+                                }
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine($&quot;{ex}&quot;);
+                                }
+                            }
+                        }
+                        
+                        public class StatisticsMiddleware : IMessageMiddleware
+                        {
+                            private static int _total = 0;
+                            public async Task Invoke(IMessageContext context, MiddlewareDelegate next)
+                            {
+                                var batch = context.GetMessagesBatch();
+                        
+                                _total += batch.Count;
+                        
+                                Console.WriteLine($&quot;Current Total: {_total}&quot;);
+                        
+                                await next(context);
+                            }
+                        }
+                        
+                        public class ReadMiddleware : IMessageMiddleware
+                        {
+                            public async Task Invoke(IMessageContext context, MiddlewareDelegate next)
+                            {
+                                var bytes = context.Message.Value as byte[];
+                                var message = Encoding.UTF8.GetString(bytes);
+                        
+                                Console.WriteLine($&quot;Read message: {message}&quot;);
+                                await next(context);
+                            }
+                        }
+                        
+                    </code>
+                </pre>
+            </div>
+        </div>
+    </section>
+    <section class="slide creamPP">
+        <span class="shout colors boldf" ><span>Pokaż mi prawdziwy przykład ASP.NET Core
+        </span></span>
+    </section>
+    <section class="slide" style="background-color:#252526">
+        <figure>
+            <img class="cover" src="pictures/vs/vs02.png" alt="blog">
+            <figcaption class="white">CW</figcaption>
+        </figure>
     </section>
     <section class="slide" style="background-color:black">
         <figure>

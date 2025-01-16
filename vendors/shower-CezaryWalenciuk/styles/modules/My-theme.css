@@ -4,6 +4,7 @@
     --border-color-js:green;
     --border-color-css: #690;
     --border-color-mapas: #414042;
+    --border-color-mapas: black;
 
 
     --COLOR-BLUE: rgb(0, 183, 255);
@@ -37,6 +38,9 @@
     background-color:VAR(--background-color-for-slidesORGINAL);
 }
 
+.boldf {
+    font-weight: bold;
+}
 
 body {
     font-family: 'Fira Sans', sans-serif;
